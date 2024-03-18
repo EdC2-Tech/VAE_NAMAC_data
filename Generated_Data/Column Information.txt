@@ -1,0 +1,4 @@
+Column 1: Time, 0 - 200 seconds
+Column 2: Total core flow rate [kg/s]
+Column 3: Upper plenum temperature [C]
+Column 4: Fuel centerline temperature [C]

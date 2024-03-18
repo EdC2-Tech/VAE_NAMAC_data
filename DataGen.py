@@ -16,7 +16,7 @@ from VAE_model import VariationalAutoEncoder
 
 def infer(mu, sigma, time, sample_size):
     '''
-    Generates n number of sampeles using latent space averages.
+    Generates n number of sampeles using latent space averages. Do not modify.
 
     Parameters
     ----------
@@ -60,11 +60,13 @@ def rescale(raw_data, time, srcFile):
         Array of sensor and target values.
     time : ndarray
         Time scale axis of transient progression.
-
+    srcFile : string
+        Name of engineering scaler file.    
+    
     Returns
     -------
     out_data : ndarray
-        Transient data.
+        Transient data rescaled to engineering values.
 
     '''
     # Engineering scalar constants, do not modify
@@ -88,9 +90,12 @@ def rescale(raw_data, time, srcFile):
     return raw_data
 
 if __name__ == "__main__":
+    # MODIFY ME
+    num_transients = 10
+    
     # Identify folder with dataset details
-    foldername  = "VAE_007_Q2_015_0768_T_backup"
-    modelname   = "VAE_007_Q2_015_0768_T_backup"
+    foldername  = "VAE_007_Q2_015_0768_T"
+    modelname   = "VAE_007_Q2_015_0768_T"
     directory   = './VAEModelSetting/'
     
     # Load variational autoencoder & structure
@@ -101,26 +106,31 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     model.eval()
     
-    # Determine hidden state layer
+    # Load latent state variables in the latent space layer of VAE
     mu      = state_dict["hid_2mu.bias"].to('cpu').detach().numpy()
     sigma   = state_dict["hid_2sigma.bias"].to('cpu').detach().numpy()
     
     # Load time scale parameters
     time_ref    = "./VAEModelSetting/Time_axis.csv"
     time_param  = np.genfromtxt(time_ref, delimiter=',')
-    
-    # Load engineering scaler constants file
-    scale_file  = "./VAEModelSetting/" + modelname + "/" + modelname + "_ESV.txt"
-    
+     
     # Convert to tensors
     mu_params   = torch.from_numpy(mu).to(DEVICE).to(torch.float32).flatten()
     sig_params  = torch.from_numpy(sigma).to(DEVICE).to(torch.float32).flatten()
     
-    # Generate dataset
-    export_data = infer(mu_params, sig_params, time_param, 10)
+    # Load engineering scaler constants file
+    scale_file  = "./VAEModelSetting/" + modelname + "/" + modelname + "_ESV.txt"
+   
+    # Rescale VAE outputs to corresponding engineering scaled values
+    export_data = infer(mu_params, sig_params, time_param, num_transients)
     export_data = rescale(export_data, time_param, scale_file)
-    #np.savetxt("TransientData.csv", export_data, delimiter=',') 
     
+    # Generate dataset as csv files
+    name_id = 1
+    for case in export_data:
+        np.savetxt("./Generated_Data/TransientData" + str(name_id) + ".csv", case, delimiter=',') 
+        name_id += 1
+        
     # Plot fuel centerline dataset
     plt.figure()
     plt.grid()
